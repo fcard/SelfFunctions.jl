@@ -22,13 +22,20 @@ end
 
 @selffirst @inline f3() = x-y
 
+@selfsecond f4(c::String) = a
+@selfsecond f4(c::Symbol) = b
+
 const t1 = MyFirstType(1,2)
 const t2 = MySecondType("a",:b)
 
 @test f1(t1,3) == 6
 @test f2(t2,'c') == "abc"
 @test f3(t1) == -1
+@test f4(t2,"c") == "a"
+@test f4(t2,:c)  == :b
 
-@test typeof(f1) == typeof(f2) == typeof(f3) == SelfFunctions.SelfFunction
+for f in [f1,f2,f3,f4]
+  @test isa(f, SelfFunctions.SelfFunction)
+end
 
 end
