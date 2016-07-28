@@ -2,16 +2,21 @@ module Tests
 using SelfFunctions
 using Base.Test
 
-type MyFirstType
+type FirstType
   x::Int
   y::Float64
 end
 
-@selftype selffirst MyFirstType
+@selftype selffirst FirstType
 
-@selftype selfsecond type MySecondType
+@selftype selfsecond type SecondType
   a::String
   b::Symbol
+end
+
+abstract AbstractThirdType
+@selftype selfthird type ThirdType{T} <: AbstractThirdType
+  v::Vector{T}
 end
 
 @selffirst function f1(z)
@@ -25,8 +30,9 @@ end
 @selfsecond f4(c::String) = a
 @selfsecond f4(c::Symbol) = b
 
-const t1 = MyFirstType(1,2)
-const t2 = MySecondType("a",:b)
+const t1 = FirstType(1,2)
+const t2 = SecondType("a",:b)
+const t3 = ThirdType([Int,Float64,String,Symbol])
 
 const a1 = @selffirst (z) -> (x+y)*z
 const a2 = @selffirst function(z); (x+y)/z end
@@ -43,6 +49,7 @@ macro m1(x)
 end
 @selffirst f7() = @m1(x) + y
 
+@selfthird f8(i) = v[i]
 
 @test f1(t1,3) == 6
 @test f2(t2,'c') == "abc"
@@ -53,10 +60,14 @@ end
 @test namespace()(t1) == 2
 @test f6(t1) == 3
 @test f7(t1) == 4
+@test f8(t3,2) == Float64
 
 @test a1(t1,3) == 9
 @test a2(t1,3) == 1
 @test a3(t1,3) == 27
+
+@test isa(t3, AbstractThirdType)
+@test typeof(t3) != ThirdType && typeof(t3) <: ThirdType
 
 for f in [f1,f2,f3,f4]
   @test isa(f, SelfFunctions.SelfFunction)
