@@ -30,12 +30,15 @@ const t2 = MySecondType("a",:b)
 
 const a1 = @selffirst (z) -> (x+y)*z
 const a2 = @selffirst function(z); (x+y)/z end
+const a3 = @selffirst (z::Int) -> (x+y)^z
 
 function namespace()
   @selffirst local f5() = x+1
   @selffirst global f6() = y+1
   return f5
 end
+
+
 
 @test f1(t1,3) == 6
 @test f2(t2,'c') == "abc"
@@ -48,6 +51,7 @@ end
 
 @test a1(t1,3) == 9
 @test a2(t1,3) == 1
+@test a3(t1,3) == 27
 
 for f in [f1,f2,f3,f4]
   @test isa(f, SelfFunctions.SelfFunction)

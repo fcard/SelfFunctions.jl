@@ -75,7 +75,7 @@ end
 
 function dismantle_function(def)
   const (sig, body) = def.args
-  if isa(sig, Symbol)
+  if isa(sig, Symbol) || sig.head == :(::)
     return ([sig], body)
   elseif sig.head == :call
     return (sig.args[2:end], body)
