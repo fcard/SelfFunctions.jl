@@ -117,6 +117,8 @@ function redef_call(self, fields)
   function rcall(x::Expr)
      if x.head == :call
        :($selfcall($(rcall(x.args[1])), $self, $(map(rcall, x.args[2:end])...)))
+     elseif x.head == :macrocall
+       rcall(macroexpand(x))
      elseif x.head == :.
        x
      elseif x.head == :quote

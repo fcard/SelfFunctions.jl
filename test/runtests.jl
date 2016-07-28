@@ -38,6 +38,10 @@ function namespace()
   return f5
 end
 
+macro m1(x)
+  x == :x ? :y : :x
+end
+@selffirst f7() = @m1(x) + y
 
 
 @test f1(t1,3) == 6
@@ -48,6 +52,7 @@ end
 @test !isdefined(:f5)
 @test namespace()(t1) == 2
 @test f6(t1) == 3
+@test f7(t1) == 4
 
 @test a1(t1,3) == 9
 @test a2(t1,3) == 1
