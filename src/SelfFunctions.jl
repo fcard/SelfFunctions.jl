@@ -58,7 +58,10 @@ isfield(arg::Expr)   = arg.head == :(::)
 isfield(arg::Symbol) = true
 isfield(x) = false
 
-typename(def::Expr)  = def.args[2]
+typename(def::Expr) = _typename(def.args[2])
+_typename(sig::Expr) = _typename(sig.args[1])
+_typename(sig::Symbol) = sig
+  
 funcname(def::Expr)  = def.head == :macrocall? funcname(def.args[2]) : signame(def.args[1])
 signame(sig::Expr)   = sig.head == :call ? sig.args[1] : sig.head == :tuple ? gensym("anonymous") : signame(sig.args[1])
 signame(sig::Symbol) = gensym("anonymous")
