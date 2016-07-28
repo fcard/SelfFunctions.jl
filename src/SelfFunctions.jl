@@ -1,3 +1,5 @@
+__precompile__()
+
 module SelfFunctions
 export @selftype
 
@@ -28,17 +30,21 @@ macro selftype(maker_macro, typedef::Expr)
 end
 
 function generate_selfmacro(name, fields, tname)
-  @gensym self fname fimpl iname typ
+  @gensym self fname fimpl iname typ selfun assign decl
   quote
     macro $(name)(funcdef)
-      const $typ   = Symbol($(string(tname)))
-      const $self  = gensym("self")
-      const $fname = $funcname(funcdef)
-      const $iname = Symbol("$($fname)_selfimpl_$($selfimpl_code)")
-      const $fimpl = $funcimpl(funcdef, $fields, $iname, $self, $typ)
+      const $typ    = Symbol($(string(tname)))
+      const $self   = gensym("self")
+      const $fname  = $funcname(funcdef)
+      const $iname  = Symbol("$($fname)_selfimpl_$($selfimpl_code)")
+      const $fimpl  = $funcimpl(funcdef, $fields, $iname, $self, $typ)
+      const $selfun = :($($SelfFunction)(Symbol($(string($fname))), $($tname), $($iname)))
+      const $assign = :($($fname) = $($selfun))
+      const $decl   = $function_decl($function_meta(funcdef)[2])[1]($assign)
+
       $(esc)(quote
         if $length($methods($($fimpl))) == 1
-          const $($fname) = $($SelfFunction)(Symbol($(string($fname))), $($tname), $($iname))
+          $(Expr(:const, $decl))
         end
       end)
     end
@@ -52,17 +58,30 @@ isfield(arg::Expr)   = arg.head == :(::)
 isfield(arg::Symbol) = true
 isfield(x) = false
 
-typename(def::Expr) = def.args[2]
-funcname(def::Expr) = def.head == :macrocall? funcname(def.args[2]) : def.args[1].args[1]
+typename(def::Expr)  = def.args[2]
+funcname(def::Expr)  = def.head == :macrocall? funcname(def.args[2]) : signame(def.args[1])
+signame(sig::Expr)   = sig.head == :call ? sig.args[1] : sig.head == :tuple ? gensym("anonymous") : signame(sig.args[1])
+signame(sig::Symbol) = gensym("anonymous")
 
 function funcimpl(def, fields, nname, self, typ)
-  const (addmeta, fdef) = function_meta(def)
-  const (sig, body) = fdef.args
-  const (name,args) = [sig.args[1], sig.args[2:end]]
+  const (addmeta, ddef) = function_meta(def)
+  const (declare, fdef) = function_decl(ddef)
+  const (args, body) = dismantle_function(fdef)
   const nbody = format_calls(body, fields, self)
   const nargs = [:($self::$typ);args]
   const nsig  = :($nname($(nargs...)))
-  addmeta(Expr(:function, nsig, nbody))
+  addmeta(declare(Expr(:function, nsig, nbody)))
+end
+
+function dismantle_function(def)
+  const (sig, body) = def.args
+  if isa(sig, Symbol)
+    return ([sig], body)
+  elseif sig.head == :call
+    return (sig.args[2:end], body)
+  elseif sig.head == :tuple
+    return (sig.args, body)
+  end
 end
 
 function function_meta(def::Expr)
@@ -78,6 +97,14 @@ function function_meta(def::Expr)
     return ndef
   end
   return (addmeta, def)
+end
+
+function function_decl(def::Expr)
+  if def.head in [:local, :global]
+    return ((ndef)->Expr(def.head, ndef), def.args[1])
+  else
+    return (identity, def)
+  end
 end
 
 function format_calls(body, fields, self)
