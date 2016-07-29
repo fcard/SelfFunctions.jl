@@ -29,10 +29,57 @@ macro selftype(maker_macro, typedef::Expr)
   end)
 end
 
+"""
+    @selftype(maker_macro::Symbol, typname::Symbol)
+
+Creates a macro named `maker_macro` that generates functions
+associated with the given type `typname`. All functions created
+have an implicit first argument of type `typname`, all fields of
+this first argument can be accessed directly.
+  
+ex.:
+```julia
+  type T
+    x::Int
+  end
+
+  @selftype self T 
+
+  @self f() = x+1
+
+  f(T(1)) #=> 2
+```
+
+    @selftype(maker_macro::Symbol, typedef::Expr)
+
+If `@selftype` takes a type definition as it's second argument,
+it will define the type and then use it. Used as:
+```julia
+  @selftype <maker_macro> type <T> ... end
+```
+Which is equivalent to
+```julia
+  type <T> ... end
+  @selftype <maker_macro> <T> 
+```
+
+ex.:
+```julia
+  @selftype self type T
+    x::Int
+  end 
+
+  @self f() = x+1
+
+  f(T(1)) #=> 2
+```
+"""
+:@selftype
+
 function generate_selfmacro(name, fields, tname)
   @gensym self fname fimpl iname typ selfun assign decl
   quote
-    macro $(name)(funcdef)
+    $Base.@__doc__ macro $(name)(funcdef)
       const $typ    = Symbol($(string(tname)))
       const $self   = gensym("self")
       const $fname  = $funcname(funcdef)
@@ -44,7 +91,7 @@ function generate_selfmacro(name, fields, tname)
 
       $(esc)(quote
         if $length($methods($($fimpl))) == 1
-          $(Expr(:const, $decl))
+          $($Base).@__doc__ $(Expr(:const, $decl))
         end
       end)
     end
