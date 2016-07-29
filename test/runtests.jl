@@ -19,6 +19,13 @@ abstract AbstractThirdType
   v::Vector{T}
 end
 
+"""
+  I associate functions with FourthType.
+"""
+@selftype selffourth type FourthType
+  d::Dict{Symbol,Int}
+end
+
 @selffirst function f1(z)
   x+y+z
 end
@@ -51,6 +58,13 @@ end
 
 @selfthird f8(i) = v[i]
 
+"""
+  I associate keys to values in a FourthType's dictionary.
+"""
+@selffourth function f9(k,v)
+  d[k] = v
+end
+
 @test f1(t1,3) == 6
 @test f2(t2,'c') == "abc"
 @test f3(t1) == -1
@@ -68,6 +82,16 @@ end
 
 @test isa(t3, AbstractThirdType)
 @test typeof(t3) != ThirdType && typeof(t3) <: ThirdType
+
+macro doc_exists(x)
+  :(!($startswith($string(@doc($x)), "No documentation found.")))
+end
+
+@test !@doc_exists(i_dont_exist)
+@test @doc_exists(@doc)
+@test @doc_exists(@selftype)
+@test @doc_exists(@selffourth)
+@test @doc_exists(f9)
 
 for f in [f1,f2,f3,f4]
   @test isa(f, SelfFunctions.SelfFunction)
