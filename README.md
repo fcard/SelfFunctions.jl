@@ -55,5 +55,4 @@ having an instance of it as an implicit argument and having access to its fields
 ## TODO
 
 * Add utilities.
-* Improve speed of `@selftype` generated macros. (dismantle and analyze function deckles in one pass)
 
