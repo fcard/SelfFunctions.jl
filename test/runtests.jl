@@ -26,6 +26,12 @@ end
   d::Dict{Symbol,Int}
 end
 
+type FifthType
+  ft::FirstType
+end
+@selftype selffifth FifthType
+
+
 @selffirst function f1(z)
   x+y+z
 end
@@ -40,6 +46,7 @@ end
 const t1 = FirstType(1,2)
 const t2 = SecondType("a",:b)
 const t3 = ThirdType([Int,Float64,String,Symbol])
+const t5 = FifthType(t1)
 
 const a1 = @selffirst (z) -> (x+y)*z
 const a2 = @selffirst function(z); (x+y)/z end
@@ -65,6 +72,9 @@ end
   d[k] = v
 end
 
+@selffifth f10(st) = string(Int(ft.x+ft.y), st.a, st.b)
+
+
 @test f1(t1,3) == 6
 @test f2(t2,'c') == "abc"
 @test f3(t1) == -1
@@ -75,6 +85,7 @@ end
 @test f6(t1) == 3
 @test f7(t1) == 4
 @test f8(t3,2) == Float64
+@test f10(t5,t2) == "3ab"
 
 @test a1(t1,3) == 9
 @test a2(t1,3) == 1
