@@ -16,17 +16,21 @@ const selfimpl_code = string(gensym())
 @inline selfcall(f::SelfFunction, t, args...) = f.f(t, args...)
 @inline selfcall(f, t, args...) = f(args...)
 
-macro selftype(maker_macro, typname::Symbol)
-  esc(generate_selfmacro(maker_macro, :(fieldnames($typname)), typname))
-end
-
-macro selftype(maker_macro, typedef::Expr)
-  const fields = map(fieldname, filter(isfield, typedef.args[3].args))
-  const tname  = typename(typedef)
-  esc(quote
-    $typedef
-    $(generate_selfmacro(maker_macro, fields, tname))
-  end)
+macro selftype(maker_macro::Symbol, typedef::Union{Expr,Symbol})
+  if isa(typedef, Expr) && typedef.head == :type
+    const fields = map(fieldname, filter(isfield, typedef.args[3].args))
+    const tname  = typename(typedef)
+    esc(quote
+      $typedef
+      $(generate_selfmacro(maker_macro, fields, tname))
+    end)
+  else
+    @gensym value
+    esc(quote
+      const $value = $(typedef)::DataType
+      $(generate_selfmacro(maker_macro, :($fieldnames($value)), value))
+    end)
+  end
 end
 
 """
@@ -80,7 +84,7 @@ function generate_selfmacro(name, fields, tname)
   @gensym self fname fimpl iname typ selfun assign decl
   quote
     $Base.@__doc__ macro $(name)(funcdef)
-      const $typ    = Symbol($(string(tname)))
+      const $typ    = $tname
       const $self   = gensym("self")
       const $fname  = $funcname(funcdef)
       const $iname  = Symbol("$($fname)_selfimpl_$($selfimpl_code)")
