@@ -29,7 +29,7 @@ end
 type FifthType
   ft::FirstType
 end
-@selftype selffifth FifthType
+@selftype selffifth typeof(FifthType(FirstType(1,2)))
 
 
 @selffirst function f1(z)
