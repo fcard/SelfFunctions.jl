@@ -170,7 +170,7 @@ function redef_call(self, fields)
      elseif x.head == :macrocall
        rcall(macroexpand(x))
      elseif x.head == :.
-       x
+       Expr(:., rcall(x.args[1]), x.args[2])
      elseif x.head == :quote
        rcall_quoted(x)
      elseif x.head in [:(=), :function] && length(x.args) > 1
